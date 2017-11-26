@@ -1,12 +1,15 @@
-FROM golang:1.9.1
+FROM golang:1.9.1 as builder
 
-WORKDIR /Users/xnicollet/src/github.com/nicollet/kubernetes/gcd/gcd
+WORKDIR /go/src/github.com/nicollet/kubernetes/gcd/gcd
 COPY gcd .
 COPY pb ../pb
 
-RUN go get -v ./...
-RUN go install -v ./...
+RUN go-wrapper download
+RUN CGO_ENABLED=0 GOOS=linux go-wrapper install
 
-EXPOSE 3000
-
-CMD [ "gcd" ]
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root
+COPY --from=builder /go/bin/gcd .
+RUN ls
+CMD ["./gcd"]

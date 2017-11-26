@@ -1,12 +1,14 @@
-FROM golang:1.9.1
+FROM golang:1.9.1 as builder
 
-WORKDIR /Users/xnicollet/src/github.com/nicollet/kubernetes/gcd/api
+WORKDIR /go/src/github.com/nicollet/kubernetes/gcd/api
 COPY api .
 COPY pb ../pb
 
-RUN go get -v ./...
-RUN go install -v ./...
+RUN go-wrapper download # go get -v ./...
+RUN CGO_ENABLED=0 GOOS=linux go-wrapper install # go install -v ./...
 
-EXPOSE 3000
-
-CMD [ "api" ]
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /go/bin/api .
+CMD ["./api"]
